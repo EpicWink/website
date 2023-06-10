@@ -1,0 +1,80 @@
+name: deploy-infrastructure
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - terraform/*
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Git clone the repository
+        uses: actions/checkout@v3
+
+      - uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/website-github-actions
+          role-session-name: epicwink-website-github-actions
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
+
+      - name: Initialise Terraform
+        run: terraform init
+
+      - name: Get Terraform plan
+        run: terraform plan -out infra.tfplan
+
+      - name: Upload plan
+        uses: actions/upload-artifact@v3
+        with:
+          name: terraform-plan
+          path: infra.tfplan
+
+  apply:
+    runs-on: ubuntu-latest
+
+    environment:
+      name: production
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Git clone the repository
+        uses: actions/checkout@v3
+
+      - uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/website-github-actions
+          role-session-name: epicwink-website-github-actions
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
+
+      - name: Download plan
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-plan
+
+      - name: Initialise Terraform
+        run: terraform init
+
+      - name: Apply Terraform plan
+        run: terraform apply infra.tfplan
+        env:
+          TF_VAR_additional_domain_names: ${{ secrets.ADDITIONAL_DOMAIN_NAMES }}
+          TF_VAR_domain_name: ${{ secrets.DOMAIN_NAME }}
