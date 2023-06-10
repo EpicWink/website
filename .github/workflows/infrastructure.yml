@@ -35,6 +35,9 @@ jobs:
         run: terraform init
 
       - name: Get Terraform plan
+        env:
+          TF_VAR_additional_domain_names: ${{ secrets.ADDITIONAL_DOMAIN_NAMES }}
+          TF_VAR_domain_name: ${{ secrets.DOMAIN_NAME }}
         working-directory: terraform
         run: terraform plan -out infra.tfplan
 
