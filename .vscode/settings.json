@@ -1,0 +1,7 @@
+{
+  "editor.wordWrapColumn": 100,
+  "liveServer.settings.root": "/src",
+  "[html]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
+}
